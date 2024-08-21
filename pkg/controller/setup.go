@@ -24,7 +24,6 @@ import (
 	"github.com/harvester/pcidevices/pkg/controller/nodes"
 	"github.com/harvester/pcidevices/pkg/controller/pcideviceclaim"
 	"github.com/harvester/pcidevices/pkg/controller/sriovdevice"
-	"github.com/harvester/pcidevices/pkg/controller/usbdevice"
 	"github.com/harvester/pcidevices/pkg/crd"
 	ctldevices "github.com/harvester/pcidevices/pkg/generated/controllers/devices.harvesterhci.io"
 	ctlkubevirt "github.com/harvester/pcidevices/pkg/generated/controllers/kubevirt.io"
@@ -98,7 +97,6 @@ func Setup(ctx context.Context, cfg *rest.Config, _ *runtime.Scheme) error {
 
 	registers := []func(context.Context, *config.FactoryManager) error{
 		pcideviceclaim.Register,
-		usbdevice.Register,
 		nodes.Register,
 		sriovdevice.Register,
 		nodecleanup.Register,

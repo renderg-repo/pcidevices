@@ -362,121 +362,109 @@ spec:
     storage: true
     subresources:
       status: {}
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: usbdevices.devices.harvesterhci.io
+  name: vlanconfigs.network.harvesterhci.io
 spec:
-  group: devices.harvesterhci.io
+  conversion:
+    strategy: None
+  group: network.harvesterhci.io
   names:
-    kind: USBDevice
-    plural: usbdevices
-    singular: usbdevice
-  preserveUnknownFields: false
+    kind: VlanConfig
+    listKind: VlanConfigList
+    plural: vlanconfigs
+    shortNames:
+    - vc
+    - vcs
+    singular: vlanconfig
   scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.vendorID
-      name: Vendor ID
+    - jsonPath: .spec.clusterNetwork
+      name: CLUSTERNETWORK
       type: string
-    - jsonPath: .status.productID
-      name: Product ID
+    - jsonPath: .spec.description
+      name: DESCRIPTION
       type: string
-    - jsonPath: .status.nodeName
-      name: Node Name
-      type: string
-    - jsonPath: .status.description
-      name: Description
-      type: string
-    - jsonPath: .status.resourceName
-      name: Resource Name
-      type: string
-    - jsonPath: .status.pciAddress
-      name: PCI Address
-      type: string
-    - jsonPath: .status.enabled
-      name: Enabled
-      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
     name: v1beta1
     schema:
       openAPIV3Schema:
         properties:
-          status:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
             properties:
+              clusterNetwork:
+                type: string
               description:
-                nullable: true
                 type: string
-              devicePath:
-                nullable: true
-                type: string
-              enabled:
-                type: boolean
-              nodeName:
-                nullable: true
-                type: string
-              pciAddress:
-                nullable: true
-                type: string
-              productID:
-                nullable: true
-                type: string
-              resourceName:
-                nullable: true
-                type: string
-              vendorID:
-                nullable: true
-                type: string
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                type: object
+              uplink:
+                properties:
+                  bondOptions:
+                    description: 'reference: https://www.kernel.org/doc/Documentation/networking/bonding.txt'
+                    properties:
+                      miimon:
+                        default: -1
+                        minimum: -1
+                        type: integer
+                      mode:
+                        default: active-backup
+                        enum:
+                        - balance-rr
+                        - active-backup
+                        - balance-xor
+                        - broadcast
+                        - 802.3ad
+                        - balance-tlb
+                        - balance-alb
+                        type: string
+                    type: object
+                  linkAttributes:
+                    properties:
+                      hardwareAddr:
+                        description: A HardwareAddr represents a physical hardware
+                          address.
+                        format: byte
+                        type: string
+                      mtu:
+                        minimum: 0
+                        type: integer
+                      txQLen:
+                        default: -1
+                        minimum: -1
+                        type: integer
+                    type: object
+                  nics:
+                    items:
+                      type: string
+                    type: array
+                type: object
+            required:
+            - clusterNetwork
+            - uplink
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
-    subresources:
-      status: {}
-
----
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  name: usbdeviceclaims.devices.harvesterhci.io
-spec:
-  group: devices.harvesterhci.io
-  names:
-    kind: USBDeviceClaim
-    plural: usbdeviceclaims
-    singular: usbdeviceclaim
-  preserveUnknownFields: false
-  scope: Cluster
-  versions:
-  - additionalPrinterColumns:
-    - jsonPath: .status.nodeName
-      name: Node Name
-      type: string
-    - jsonPath: .status.pciAddress
-      name: PCI Address
-      type: string
-    - jsonPath: .status.userName
-      name: User Name
-      type: string
-    name: v1beta1
-    schema:
-      openAPIV3Schema:
-        properties:
-          status:
-            properties:
-              nodeName:
-                nullable: true
-                type: string
-              pciAddress:
-                nullable: true
-                type: string
-              userName:
-                nullable: true
-                type: string
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
+    subresources: {}

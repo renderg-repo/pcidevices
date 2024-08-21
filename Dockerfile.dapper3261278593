@@ -1,0 +1,2 @@
+FROM pcidevices:temp
+COPY . /go/src/github.com/harvester/pcidevices/
