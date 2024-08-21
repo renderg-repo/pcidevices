@@ -26,6 +26,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -34,10 +35,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	pluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 	"kubevirt.io/client-go/log"
 	"kubevirt.io/kubevirt/pkg/util"
-	pluginapi "kubevirt.io/kubevirt/pkg/virt-handler/device-manager/deviceplugin/v1beta1"
 )
+
+var _ pluginapi.DevicePluginServer = (*PCIDevicePlugin)(nil)
 
 const (
 	vfioDevicePath    = "/dev/vfio/"
@@ -267,14 +270,7 @@ func (dp *PCIDevicePlugin) Allocate(_ context.Context, r *pluginapi.AllocateRequ
 			logrus.Debugf("looking up deviceID %s in map %v", devID, dp.iommuToPCIMap)
 			iommuGroup, exist := dp.iommuToPCIMap[devID] // not finding device ids
 			if exist {
-				// if device exists, check if there other devices
-				// in the same iommuGroup, and append these too
 				allocatedDevices = append(allocatedDevices, devID)
-				for devPCIAddress, ig := range dp.iommuToPCIMap {
-					if ig == iommuGroup {
-						allocatedDevices = append(allocatedDevices, devPCIAddress)
-					}
-				}
 				deviceSpecs = append(deviceSpecs, formatVFIODeviceSpecs(iommuGroup)...)
 			} else {
 				continue // break execution of loop as we are not handling this device
@@ -289,6 +285,50 @@ func (dp *PCIDevicePlugin) Allocate(_ context.Context, r *pluginapi.AllocateRequ
 	}
 	logrus.Debugf("Allocate response %v", resp)
 	return resp, nil
+}
+
+// The plugin returns the devices that are explicitly requested by the container first, followed by
+// the rest of the available devices.  The order of the explicitly requested devices is preserved,
+// and the rest of the available devices are sorted by their device IDs (IOMMU groups).
+// This helps ensure that devices in the same IOMMU group are allocated to the same container.
+func (dp *PCIDevicePlugin) GetPreferredAllocation(_ context.Context, req *pluginapi.PreferredAllocationRequest) (*pluginapi.PreferredAllocationResponse, error) {
+	res := &pluginapi.PreferredAllocationResponse{}
+
+	for _, containerRequest := range req.ContainerRequests {
+		deviceIDs := make([]string, 0, containerRequest.AllocationSize)
+
+		// Sort the device IDs to ensure that the order is deterministic
+		sort.Strings(containerRequest.MustIncludeDeviceIDs)
+		sort.Strings(containerRequest.AvailableDeviceIDs)
+
+		// First, try to allocate the devices that are explicitly requested
+		for _, deviceID := range containerRequest.MustIncludeDeviceIDs {
+			if len(deviceIDs) >= int(containerRequest.AllocationSize) {
+				break
+			}
+
+			deviceIDs = append(deviceIDs, deviceID)
+		}
+
+		// If there are not enough explicitly requested devices, allocate the rest
+		for _, deviceID := range containerRequest.AvailableDeviceIDs {
+			if len(deviceIDs) >= int(containerRequest.AllocationSize) {
+				break
+			}
+
+			for _, existing := range deviceIDs {
+				if existing == deviceID {
+					continue
+				}
+			}
+
+			deviceIDs = append(deviceIDs, deviceID)
+		}
+
+		res.ContainerResponses = append(res.ContainerResponses, &pluginapi.ContainerPreferredAllocationResponse{DeviceIDs: deviceIDs})
+	}
+
+	return res, nil
 }
 
 func (dp *PCIDevicePlugin) healthCheck() error {

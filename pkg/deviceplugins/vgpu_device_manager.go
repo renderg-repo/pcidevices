@@ -34,8 +34,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	pluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 	"kubevirt.io/kubevirt/pkg/util"
-	pluginapi "kubevirt.io/kubevirt/pkg/virt-handler/device-manager/deviceplugin/v1beta1"
 
 	"github.com/harvester/pcidevices/pkg/apis/devices.harvesterhci.io/v1beta1"
 )
@@ -43,6 +43,8 @@ import (
 const (
 	vgpuPrefix = "MDEV_PCI_RESOURCE"
 )
+
+var _ pluginapi.DevicePluginServer = (*VGPUDevicePlugin)(nil)
 
 type VGPUDevicePlugin struct {
 	devs         []*pluginapi.Device
@@ -245,6 +247,19 @@ func (dp *VGPUDevicePlugin) Allocate(_ context.Context, r *pluginapi.AllocateReq
 	}
 
 	return resp, nil
+}
+
+func (dp *VGPUDevicePlugin) GetPreferredAllocation(ctx context.Context, req *pluginapi.PreferredAllocationRequest) (*pluginapi.PreferredAllocationResponse, error) {
+	response := &pluginapi.PreferredAllocationResponse{}
+
+	for _, container := range req.ContainerRequests {
+		preferred := &pluginapi.ContainerPreferredAllocationResponse{
+			DeviceIDs: container.AvailableDeviceIDs,
+		}
+		response.ContainerResponses = append(response.ContainerResponses, preferred)
+	}
+
+	return response, nil
 }
 
 func (dp *VGPUDevicePlugin) healthCheck() error {

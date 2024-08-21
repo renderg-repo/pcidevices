@@ -35,11 +35,11 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	pluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 	v1 "kubevirt.io/api/core/v1"
 	"kubevirt.io/client-go/log"
 	"kubevirt.io/kubevirt/pkg/safepath"
 	"kubevirt.io/kubevirt/pkg/util"
-	pluginapi "kubevirt.io/kubevirt/pkg/virt-handler/device-manager/deviceplugin/v1beta1"
 
 	"github.com/harvester/pcidevices/pkg/apis/devices.harvesterhci.io/v1beta1"
 )
@@ -47,6 +47,8 @@ import (
 var (
 	pathToUSBDevices = "/sys/bus/usb/devices"
 )
+
+var _ pluginapi.DevicePluginServer = (*USBDevicePlugin)(nil)
 
 // The actual plugin
 type USBDevicePlugin struct {
@@ -372,6 +374,19 @@ func (plugin *USBDevicePlugin) Allocate(_ context.Context, allocRequest *plugina
 	}
 
 	return allocResponse, nil
+}
+
+func (dp *USBDevicePlugin) GetPreferredAllocation(ctx context.Context, req *pluginapi.PreferredAllocationRequest) (*pluginapi.PreferredAllocationResponse, error) {
+	response := &pluginapi.PreferredAllocationResponse{}
+
+	for _, container := range req.ContainerRequests {
+		preferred := &pluginapi.ContainerPreferredAllocationResponse{
+			DeviceIDs: container.AvailableDeviceIDs,
+		}
+		response.ContainerResponses = append(response.ContainerResponses, preferred)
+	}
+
+	return response, nil
 }
 
 func (plugin *USBDevicePlugin) PreStartContainer(context.Context, *pluginapi.PreStartContainerRequest) (*pluginapi.PreStartContainerResponse, error) {

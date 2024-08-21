@@ -34,8 +34,8 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 	"kubevirt.io/client-go/log"
-	"kubevirt.io/kubevirt/pkg/virt-handler/device-manager/deviceplugin/v1beta1"
 )
 
 type DeviceHandler interface {
