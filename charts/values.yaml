@@ -8,7 +8,7 @@ image:
   repository: registry.cn-hangzhou.aliyuncs.com/orbit/pcidevices
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: orbit-0.1
+  tag: orbit-debug1
 
 imagePullSecrets: []
 nameOverride: ""
