@@ -42,7 +42,7 @@ var (
 
 const (
 	vfioPCIDriver     = "vfio-pci"
-	DefaultNS         = "harvester-system"
+	DefaultNS         = "kubevirt"
 	KubevirtCR        = "kubevirt"
 	vfioPCIDriverPath = "/sys/bus/pci/drivers/vfio-pci"
 )

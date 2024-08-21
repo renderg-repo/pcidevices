@@ -292,6 +292,7 @@ func (dp *PCIDevicePlugin) Allocate(_ context.Context, r *pluginapi.AllocateRequ
 // and the rest of the available devices are sorted by their device IDs (IOMMU groups).
 // This helps ensure that devices in the same IOMMU group are allocated to the same container.
 func (dp *PCIDevicePlugin) GetPreferredAllocation(_ context.Context, req *pluginapi.PreferredAllocationRequest) (*pluginapi.PreferredAllocationResponse, error) {
+	logrus.Debugf("GetPreferredAllocation request %s", req.String())
 	res := &pluginapi.PreferredAllocationResponse{}
 
 	for _, containerRequest := range req.ContainerRequests {
@@ -328,6 +329,7 @@ func (dp *PCIDevicePlugin) GetPreferredAllocation(_ context.Context, req *plugin
 		res.ContainerResponses = append(res.ContainerResponses, &pluginapi.ContainerPreferredAllocationResponse{DeviceIDs: deviceIDs})
 	}
 
+	logrus.Debugf("GetPreferredAllocation response %s", res.String())
 	return res, nil
 }
 
@@ -480,7 +482,8 @@ func (dp *PCIDevicePlugin) cleanup() error {
 
 func (dp *PCIDevicePlugin) GetDevicePluginOptions(_ context.Context, _ *pluginapi.Empty) (*pluginapi.DevicePluginOptions, error) {
 	options := &pluginapi.DevicePluginOptions{
-		PreStartRequired: false,
+		PreStartRequired:                false,
+		GetPreferredAllocationAvailable: true,
 	}
 	return options, nil
 }

@@ -27,7 +27,7 @@ var (
 )
 
 const (
-	DefaultNS  = "harvester-system"
+	DefaultNS  = "kubevirt"
 	KubevirtCR = "kubevirt"
 )
 
