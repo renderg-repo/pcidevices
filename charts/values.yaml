@@ -5,10 +5,10 @@
 replicaCount: 1
 
 image:
-  repository: registry.cn-hangzhou.aliyuncs.com/orbit/pcidevices
+  repository: registry.spacehpc.com/pcidevices/pcidevices
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: orbit-debug8
+  tag: orbit-0.1
 
 imagePullSecrets: []
 nameOverride: ""
@@ -51,4 +51,4 @@ tolerations:
 affinity: {}
 
 # enable debug logging for pcidevices controller
-debug: true
+debug: false
